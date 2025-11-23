@@ -14,22 +14,48 @@
 <body>
     <div id="map"></div>
     
-    <!-- DEMO: Control Panel for toggling visualization modes (commented out) -->
-    <!-- <div class="control-panel">
-        <h3>🎛️ Controls</h3>
-        <button class="control-btn toggle-mode-btn" onclick="toggleRiskMode()">🎨 Gradient Mode</button>
-        <button class="control-btn toggle-buffer-btn" onclick="toggleBufferMode()">🛡️ Buffers: ON</button>
-    </div> -->
+    <!-- Control Panel for OSM Layers -->
+    <div class="control-panel">
+        <h3>🗺️ Layers</h3>
+        <label class="layer-toggle">
+            <input type="checkbox" id="toggle-crime" checked onchange="toggleLayer('crime')">
+            <span>Crime Heat Map</span>
+        </label>
+        
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;">
+            <button id="show-network-btn" onclick="toggleNetworkDisplay()">🔍 Show Street Network</button>
+        </div>
+        
+        <div style="margin-top: 10px;">
+            <button id="routing-toggle-btn" onclick="toggleRoutingMode()">🗺️ Plan Safe Route</button>
+        </div>
+        
+        <div id="routing-instructions" style="display:none; margin-top: 10px; padding: 10px; background: rgba(0,255,136,0.1); border-radius: 8px; font-size: 12px;">
+            <strong>📍 Click on the map:</strong><br>
+            1️⃣ First click = Start (A)<br>
+            2️⃣ Second click = End (B)
+        </div>
+    </div>
+    
+    <!-- Route Result Panel -->
+    <div id="route-result" class="route-result-panel" style="display:none;"></div>
     
     <!-- Info Panel -->
     <div class="info-panel">
         <h2>SafeRoute AI</h2>
-        <p>Toronto Crime Risk Visualization</p>
+        <p>Toronto Downtown</p>
+        <div class="bounds-info">
+            <small>📍 Area: 43.612°N to 43.823°N<br>
+            79.563°W to 79.187°W</small>
+        </div>
         <div id="stats"></div>
     </div>
     
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Pathfinding JS -->
+    <script src="pathfinding.js"></script>
     
     <!-- App JS -->
     <script src="app.js"></script>
