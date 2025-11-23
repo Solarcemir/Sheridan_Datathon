@@ -83,7 +83,7 @@ async def chat(user_input, incidents):
             )
         ]
     )
-    
+
     response = client.models.generate_content(
         model=model,
         contents=messages,
