@@ -1,0 +1,19 @@
+{
+  "name": "saferoute-ai",
+  "version": "1.0.0",
+  "description": "Risk-aware urban map for Toronto using crime data",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "leaflet",
+    "geojson",
+    "toronto",
+    "crime",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT"
+}
