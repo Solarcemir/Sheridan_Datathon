@@ -64,8 +64,6 @@ async def chat(user_input, incidents):
         )
     ]
 
-    response_text = ""
-
     generate_content_config = types.GenerateContentConfig(
         system_instruction=[
             types.Part.from_text(
@@ -73,40 +71,47 @@ async def chat(user_input, incidents):
                 You are an assistant that looks at recent street incidents in Toronto.
                 The user will ask something related to a specific area in Toronto.
                 You will be given a list of recent incidents within the following data: {incidents}.
-                Based on the area the user inputs, you will read the provided dataset and identify any recent indicents in that area.
-                Additionally, try to find any related or extra information about the specific incidents mentioned in the dataset.
+                Based on the area the user inputs, identify any recent incidents in that area.
                 Do NOT make up information.
-                Format your response as a JSON.
-                Your JSON response should include and be split as:
-                1. Message: A list of all the incidents found on the area specified by the user, along with any extra information about the incident.
-                2. Longitud: The calculation of the longitud of the area inputed by the user.
-                3. Latitud: The calculation of the latitud of the area inputed by the user.
+                Respond strictly as JSON with:
+                {{
+                  "message": "...",
+                  "longitud": "...",
+                  "latitud": "..."
+                }}
                 """
             )
         ]
     )
     
-    for chunk in client.models.generate_content_stream(
+    response = client.models.generate_content(
         model=model,
         contents=messages,
         config=generate_content_config,
-    ):
-        if chunk.text:
-            print(chunk.text, end="")
-            response_text += chunk.text
+    )
 
-    # Split the response into 3 parts (simple parsing)
-    answer, coords, news = "","",""
+    # Entire text output
+    response_text = response.text
+
     try:
-        parts=response_text.split("COORDS:")
-        answer=parts[0].replace("ANSWER:","").strip()
-        parts2=parts[1].split("NEWS:")
-        coords=parts2[0].strip()
-        news=parts2[1].strip()
+        # Try to parse as JSON
+        data = json.loads(response_text)
+        return {
+            "answer": data.get("message", ""),
+            "coords": {
+                "longitud": data.get("longitud", ""),
+                "latitud": data.get("latitud", "")
+            },
+            "recent_news": data.get("recent_news", "")
+        }
     except:
-        answer=response_text
+        # If model returns non-JSON, return raw
+        return {
+            "answer": response_text,
+            "coords": "",
+            "recent_news": ""
+        }
 
-    return {"answer":answer, "coords":coords, "recent_news":news}
 
 if __name__ == "__main__":
     input_data=json.load(sys.stdin)
