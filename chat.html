@@ -11,32 +11,35 @@
 <h1>SafeRoute AI Chat</h1>
 
 <div class="chat-input-section">
-    <label>Street Name:</label>
+    <label for="streetInput">Street Name:</label>
     <input id="streetInput" placeholder="Enter street...">
 
-    <label>Time:</label>
-    <input id="timeInput" placeholder="e.g. 9:00 PM">
+    <!-- Row for Time + Situation -->
+    <div class="row-inputs">
+        <div class="time-picker">
+            <label for="hour">Time:</label>
+            <select id="hour"></select> :
+            <select id="minute"></select>
+            <select id="ampm">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+            </select>
+        </div>
+
+        <div class="situation-picker">
+            <label for="situation">Situation:</label>
+            <select id="situation">
+                <option value="Driving">Driving</option>
+                <option value="Walking/Bus">Walking/Bus</option>
+                <option value="Housing">Housing</option>
+            </select>
+        </div>
+    </div>
 
     <button onclick="askAI()">Ask AI</button>
 </div>
 
 <div id="ai-response" class="ai-response"></div>
-
-<script>
-async function askAI() {
-    let street = document.getElementById("streetInput").value;
-    let time = document.getElementById("timeInput").value;
-
-    let res = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ street, time })
-    });
-
-    let data = await res.json();
-    document.getElementById("ai-response").innerHTML = `<p>${data.reply}</p>`;
-}
-</script>
 
 <script src="chat.js"></script>
 

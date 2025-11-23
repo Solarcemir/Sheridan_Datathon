@@ -2,6 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 const PORT = 3000;
 
@@ -20,6 +21,27 @@ const mimeTypes = {
 
 const server = http.createServer((req, res) => {
     console.log(`${req.method} ${req.url}`);
+
+    // Chat API endpoint
+    if (req.url === '/chat' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', () => {
+            // Call Python script
+            const python = spawn('python', ['gemini_api.py']);
+
+            python.stdin.write(body); // send {street, time} JSON
+            python.stdin.end();
+
+            let result = '';
+            python.stdout.on('data', data => result += data.toString());
+            python.on('close', () => {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(result); // send Gemini response back to chat.js
+            });
+        });
+        return; // skip static file handling
+    }
 
     // Default to index.html
     let filePath = '.' + req.url;
