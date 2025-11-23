@@ -1,5 +1,7 @@
 # To run this code you need to install the following dependencies:
 # pip install google-genai
+# pip install playwright
+# pip install bs4
 
 import os
 from dotenv import load_dotenv
@@ -9,6 +11,8 @@ from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 import asyncio
 import requests
+import json
+import sys
 
 load_dotenv()
 
@@ -53,61 +57,59 @@ async def chat():
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     model = "gemini-flash-latest"
 
-    data = fetch_gta_updates()
-    print(f"Loaded {len(data)} incidents.\n")
+    messages = [
+        types.Content(
+            role="user",
+            parts=[types.Part.from_text(text=user_input)]
+        )
+    ]
 
-    print("\nToronto Live Crime Data Chat Started! Type 'exit' to stop.\n")
-    messages = []
+    response_text = ""
 
-    while True:
-        user_input = input("You: ")
-        if user_input.lower() == "exit":
-            break
-
-        messages.append(
-            types.Content(role="user",
-                parts=[types.Part.from_text(text=user_input)]
+    generate_content_config = types.GenerateContentConfig(
+        system_instruction=[
+            types.Part.from_text(
+                text=f"""
+                You are an assistant that looks at recent events in the streets of Toronto.
+                Your task is to alert the user of any relevant incidents, based on what the user is currently doing.
+                The user can be either 'Driving/Bus Riding', 'Walking', or 'Bicycle Riding' on a specified street.
+                Respond ONLY this incident data: {incidents}
+                Do not make up anything.
+                If the user is 'Driving/Bus Riding', alert it of incidents no longer than 2 hours ago.
+                If the user is 'Walking', alert it of incidents no longer than 7 hours ago.
+                If the user is 'Bicycle Riding', alert if of incidents no longer than 5 hours ago.
+                If no incident is related, just say 'Area is Safe: No recent incidents reported.'
+                Response should be straight forward and customized for the user.
+                """
             )
-        )
+        ]
+    )
+    
+    for chunk in client.models.generate_content_stream(
+        model=model,
+        contents=messages,
+        config=generate_content_config,
+    ):
+        if chunk.text:
+            print(chunk.text, end="")
+            response_text += chunk.text
 
-        response_text = ""
-
-        generate_content_config = types.GenerateContentConfig(
-            system_instruction=[
-                types.Part.from_text(
-                    text=f"""
-                    You are an assistant that looks at recent events in the streets of Toronto.
-                    Your task is to alert the user of any relevant incidents, based on what the user is currently doing.
-                    The user can be either 'Driving/Bus Riding', 'Walking', or 'Bicycle Riding' on a specified street.
-                    Respond ONLY this incident data: {data}
-                    Do not make up anything.
-                    If the user is 'Driving/Bus Riding', alert it of incidents no longer than 2 hours ago.
-                    If the user is 'Walking', alert it of incidents no longer than 7 hours ago.
-                    If the user is 'Bicycle Riding', alert if of incidents no longer than 5 hours ago.
-                    If no incident is related, just say 'Area is Safe: No recent incidents reported.'
-                    Response should be straight forward and customized for the user.
-                    """
-                )
-            ]
-        )
-
-        for chunk in client.models.generate_content_stream(
-            model=model,
-            contents=messages,
-            config=generate_content_config,
-        ):
-            if chunk.text:
-                print(chunk.text, end="")
-                response_text += chunk.text
-
-        print("\n")
-
-        messages.append(
-            types.Content(role="model",
-                parts=[types.Part.from_text(text=response_text)]
-            )
-        )
-
+    return response_text
 
 if __name__ == "__main__":
-    asyncio.run(chat())
+    # Read JSON input from stdin
+    input_data = json.load(sys.stdin)
+    street = input_data.get("street", "")
+    time = input_data.get("time", "")
+    situation = input_data.get("situation", "")
+
+    # Construct user_input for Gemini
+    user_input = f"Street: {street}, Time: {time}, Situation: {situation}"
+
+    incidents = fetch_gta_updates()
+
+    # Run Gemini chat
+    response_text = asyncio.run(chat(user_input, incidents))
+
+    # Output JSON so Node server can read it
+    print(json.dumps({"reply": response_text}))
