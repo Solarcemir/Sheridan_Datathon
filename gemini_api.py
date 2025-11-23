@@ -1,43 +1,71 @@
 # To run this code you need to install the following dependencies:
 # pip install google-genai
 
-import base64
 import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from google.genai.types import UploadFileConfig
-import pandas as pd
+from playwright.async_api import async_playwright
+from bs4 import BeautifulSoup
+import asyncio
+import requests
 
 load_dotenv()
 
-def generate():
-    client = genai.Client(
-        api_key=os.getenv("GEMINI_API_KEY"),
-    )
+def fetch_gta_updates():
+    url = "https://gtaupdate.com/"
+    response = requests.get(url)
 
-    # Load file for API to read from
-    df = pd.read_csv("Neighbourhood_Crime_Rates_Open_Data_6759951416839911996.csv")
+    if response.status_code != 200:
+        print("Error: Failed to fetch page")
+        return []
 
-    # Convert to text table
-    csv_text = df.to_string(index=False)
+    soup = BeautifulSoup(response.text, "html.parser")
 
-    # Conversation history
-    messages = [] 
+    table = soup.find("table")
+    if not table:
+        print("Error: Table not found")
+        return []
 
+    tbody = table.find("tbody")
+    rows = tbody.find_all("tr")
+
+    incidents = []
+
+    for row in rows:
+        cols = row.find_all("td")
+        if len(cols) < 3:
+            continue  # skip empty rows
+
+        time = cols[0].text.strip()
+        district = cols[1].text.strip()
+        details = cols[2].text.strip()
+
+        incidents.append({
+            "time": time,
+            "district": district,
+            "details": details
+        })
+
+    return incidents
+
+async def chat():
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     model = "gemini-flash-latest"
 
-    print("Toronto Crime Chat Started! Type 'exit' to stop.\n")
+    data = fetch_gta_updates()
+    print(f"Loaded {len(data)} incidents.\n")
+
+    print("\nToronto Live Crime Data Chat Started! Type 'exit' to stop.\n")
+    messages = []
 
     while True:
         user_input = input("You: ")
         if user_input.lower() == "exit":
             break
 
-        # Add user message to history
         messages.append(
-            types.Content(
-                role="user",
+            types.Content(role="user",
                 parts=[types.Part.from_text(text=user_input)]
             )
         )
@@ -46,13 +74,15 @@ def generate():
 
         generate_content_config = types.GenerateContentConfig(
             system_instruction=[
-                types.Part.from_text(text=f"""You are an assistant that explains safety levels between Toronto neighborhoods.  
-                                            Use only the data below.
-                                            Data: {csv_text}  
-                                            Do NOT make up any numbers.  
-                                            The user will ask things like (This is an example!): 'How dangerous is Downsview compared to West Rouge?' 
-                                            Give percentages or counts where relevant, based only on the CSV.
-                                            Give answers that are easy and short for a normal human to understand.""")
+                types.Part.from_text(
+                    text=f"""
+                    You are an assistant that explains the safety of streets of Toronto.
+                    Use ONLY the incident data below:
+                    {data}
+                    Do not make up anything.
+                    If no incident is related, just say 'No recent incidents reported for that area.'
+                    """
+                )
             ]
         )
 
@@ -67,13 +97,12 @@ def generate():
 
         print("\n")
 
-        # Add response to history
         messages.append(
-            types.Content(
-                role="model",
+            types.Content(role="model",
                 parts=[types.Part.from_text(text=response_text)]
             )
         )
 
+
 if __name__ == "__main__":
-    generate()
+    asyncio.run(chat())
