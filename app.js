@@ -640,6 +640,235 @@ function init() {
     loadRoutingGraph(); // Solo carga el grafo JSON (ligero), no los edges visuales
 }
 
+// ============================================
+// GEMINI AI INTEGRATION
+// ============================================
+
+// Fetch live crime data from gtaupdate.com
+window.fetchLiveCrimes = async function() {
+    const statusDiv = document.getElementById('fetch-status');
+    const btn = document.getElementById('fetch-crimes-btn');
+    
+    // Show loading
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = '<em style="color: #667eea;">🤖 AI is analyzing live crime data...</em>';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    
+    try {
+        const response = await fetch('/fetch-live-crimes');
+        const data = await response.json();
+        
+        if (data.error) {
+            statusDiv.innerHTML = `<em style="color: #ff6b6b;">❌ Error: ${data.error}</em>`;
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            return;
+        }
+        
+        if (!data.success || !data.events || data.events.length === 0) {
+            statusDiv.innerHTML = '<em style="color: #ffaa00;">⚠️ No recent incidents found</em>';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            return;
+        }
+        
+        // Clear existing crime events
+        clearCrimeEvents();
+        
+        // Create crime events from fetched data
+        let created = 0;
+        const eventCoords = [];
+        
+        for (const event of data.events) {
+            const success = createCrimeEventAtLocation(
+                event.lat, 
+                event.lon, 
+                event.type, 
+                event.impact,
+                event.location,
+                event.description  // Pass the full description
+            );
+            if (success) {
+                created++;
+                eventCoords.push([event.lat, event.lon]);
+            }
+        }
+        
+        // Pan map to show all new events
+        if (eventCoords.length > 0) {
+            const bounds = L.latLngBounds(eventCoords);
+            map.fitBounds(bounds, { 
+                padding: [50, 50],
+                maxZoom: 14  // Don't zoom too close
+            });
+            console.log('📍 Map panned to show', eventCoords.length, 'live crime events');
+            
+            // Trigger map update to refresh boundary edges
+            map.invalidateSize();
+            setTimeout(() => {
+                if (window.edgesLayer) {
+                    window.edgesLayer.bringToBack();
+                }
+            }, 100);
+            
+            // Show popup with ALL incidents
+            showAllIncidentsPopup(data.events);
+        }
+        
+        statusDiv.innerHTML = `
+            <div style="color: #00ff88; font-weight: bold; margin-bottom: 5px;">
+                ✅ Live Data Loaded
+            </div>
+            <div style="color: #ccc; font-size: 10px;">
+                ${created} recent incidents mapped<br>
+                Red zones show high-risk areas
+            </div>
+        `;
+        
+        // Re-enable button after 3 seconds
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Fetch crimes error:', error);
+        statusDiv.innerHTML = '<em style="color: #ff6b6b;">❌ Failed to connect to crime data service</em>';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }
+};
+
+// Create crime event at specific location with description
+function createCrimeEventAtLocation(lat, lon, type, impact, location, fullDescription) {
+    if (!map) return false;
+    
+    console.log(`🚨 Creating live crime event at [${lat}, ${lon}]: ${type} - ${location}`);
+    
+    // Create marker
+    const marker = L.marker([lat, lon], {
+        icon: L.divIcon({
+            className: 'crime-event-marker',
+            html: `<div style="background: #ff0000; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(255,0,0,0.8);"></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        }),
+        zIndexOffset: 2000
+    }).addTo(map);
+    
+    // Create danger zone circle (100m radius)
+    const circle = L.circle([lat, lon], {
+        radius: 100,
+        color: '#ff0000',
+        fillColor: '#ff0000',
+        fillOpacity: 0.2,
+        weight: 2,
+        dashArray: '5, 5'
+    }).addTo(map);
+    
+    // Add popup with full description
+    marker.bindPopup(`
+        <div style="min-width: 250px; max-width: 350px;">
+            <div style="font-weight: bold; color: #ff4444; font-size: 15px; margin-bottom: 8px;">
+                🚨 Live Crime Alert
+            </div>
+            <div style="font-size: 13px; color: #00ff88; font-weight: bold; margin-bottom: 8px;">
+                📍 ${location}
+            </div>
+            <div style="font-size: 11px; color: #ccc; line-height: 1.5; margin-bottom: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 4px;">
+                ${fullDescription || 'No details available'}
+            </div>
+            <div style="font-size: 11px; color: #999;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Type:</span>
+                    <strong style="color: #ff6b6b;">${type.toUpperCase()}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Severity:</span>
+                    <strong style="color: #ffaa00;">${impact}%</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Danger Zone:</span>
+                    <strong style="color: #ff4444;">100m radius</strong>
+                </div>
+            </div>
+        </div>
+    `);
+    
+    // Store event
+    crimeEvents.push({
+        lat: lat,
+        lon: lon,
+        type: type,
+        impact: impact,
+        timestamp: Date.now(),
+        marker: marker,
+        circle: circle,
+        location: location,
+        description: fullDescription
+    });
+    
+    console.log(`✅ Crime event created. Total events: ${crimeEvents.length}`);
+    
+    return true;
+}
+
+// Show popup with all incidents
+function showAllIncidentsPopup(events) {
+    // Remove existing popup if any
+    const existingPopup = document.getElementById('all-incidents-popup');
+    if (existingPopup) existingPopup.remove();
+    
+    // Build incidents HTML
+    let incidentsHTML = '';
+    events.forEach((event, index) => {
+        const typeEmoji = {
+            'shooting': '🔫',
+            'robbery': '💰',
+            'assault': '👊',
+            'break_and_enter': '🏠',
+            'auto_theft': '🚗'
+        }[event.type] || '⚠️';
+        
+        incidentsHTML += `
+            <div style="margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 4px solid ${event.impact > 80 ? '#ff0000' : event.impact > 70 ? '#ff6b6b' : '#ffaa00'};">
+                <div style="font-weight: bold; color: #ff4444; font-size: 13px; margin-bottom: 6px;">
+                    ${typeEmoji} ${event.type.toUpperCase().replace(/_/g, ' ')} - Severity ${event.impact}%
+                </div>
+                <div style="font-size: 12px; color: #00ff88; margin-bottom: 6px;">
+                    📍 ${event.location}
+                </div>
+                <div style="font-size: 11px; color: #ccc; line-height: 1.4;">
+                    ${event.description}
+                </div>
+            </div>
+        `;
+    });
+    
+    // Create popup overlay
+    const popup = document.createElement('div');
+    popup.id = 'all-incidents-popup';
+    popup.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;" onclick="this.parentElement.remove()">
+            <div style="background: #1a1a2e; padding: 25px; border-radius: 10px; max-width: 700px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.5);" onclick="event.stopPropagation()">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 15px;">
+                    <div>
+                        <div style="font-size: 20px; font-weight: bold; color: #fff;">🚨 Live Crime Incidents</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 5px;">Toronto - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+                    </div>
+                    <button onclick="this.closest('#all-incidents-popup').remove()" style="background: #ff4444; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">✕ Close</button>
+                </div>
+                <div style="color: #ccc;">
+                    ${incidentsHTML}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+}
+
 // Add coverage area circle to show where routing works
 function addCoverageArea() {
     // Downtown Toronto center and radius

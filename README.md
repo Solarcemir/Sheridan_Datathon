@@ -1,39 +1,95 @@
 # SafeRoute AI - Toronto Risk Map
 
-**AI-powered safe route navigation system** using real Toronto crime data, OpenStreetMap infrastructure, and intelligent weight calculation for risk-aware pathfinding.
+**AI-powered safe route navigation system** using real Toronto crime data, live incident monitoring, OpenStreetMap infrastructure, and intelligent weight calculation for risk-aware pathfinding.
+
+---
 
 ## 🎯 Project Overview
 
-SafeRoute AI analyzes Toronto's downtown area to create a **weighted routing graph** that enables safe path calculation between any two points. The system combines:
-- Real crime statistics (normalized by population)
-- Street network topology from OpenStreetMap
-- Points of Interest (POIs) density analysis
-- Intelligent weight calculation for each intersection and street segment
+SafeRoute AI is a comprehensive urban safety navigation system that analyzes Toronto's downtown area to create a **weighted routing graph** enabling safe path calculation between any two points. The system combines historical crime statistics, real-time incident monitoring, and advanced geospatial analysis to provide users with actionable safety intelligence.
+
+### Key Capabilities:
+- 🗺️ **Interactive Risk Visualization**: Dark-themed map with color-coded streets (🟢 safe → 🔴 dangerous)
+- 🤖 **AI-Powered Live Incident Monitoring**: Gemini AI integration for real-time crime data analysis
+- 📊 **Weighted Routing Graph**: 11,495 intersection nodes + 13,195 street edges with safety scores
+- 🧠 **Smart Multi-Factor Analysis**: Crime rates, POI density, street characteristics, and intersection complexity
+- 📍 **Real Toronto Data**: Crime rates from 2024 across 158 neighborhoods + live incident tracking
+- 🚨 **Dynamic Danger Zones**: 100m radius circles around active incidents with detailed descriptions
+- 🎯 **Ready for Pathfinding**: Complete graph structure for A* or Dijkstra safe routing algorithms
+
+---
 
 ## 🚀 Features
 
-- **Interactive Risk Visualization**: Dark-themed map with color-coded streets (🟢 safe → 🔴 dangerous)
-- **Weighted Routing Graph**: 11,495 intersection nodes + 13,195 street edges
-- **Smart Weight Calculation**: Multi-factor analysis considering crime rates, POI density, and street characteristics
-- **Real Toronto Data**: Crime rates from 2024 across 158 neighborhoods
-- **Ready for Pathfinding**: Graph structure prepared for A* or Dijkstra algorithms
+### 1. **Historical Crime Analysis**
+- Processes 158 Toronto neighborhoods with normalized crime rates (per capita)
+- Analyzes 9 crime types: Homicide, Shooting, Robbery, Assault, Break & Enter, Auto Theft, Theft from MV, Theft Over, Bike Theft
+- Severity-weighted scoring system prioritizing violent crimes
+- Color-coded visualization: green (safe) → yellow → orange → red (dangerous)
+
+### 2. **Live Crime Incident Monitoring** 🆕
+- **AI-Powered Analysis**: Gemini 2.0 Flash integration for intelligent crime data extraction
+- **Real-Time Updates**: Fetches latest incidents from Toronto crime feeds
+- **Automatic Geocoding**: Converts location descriptions to precise GPS coordinates
+- **Detailed Descriptions**: News-style summaries with location, type, severity, and full incident details
+- **Visual Alerts**: Red danger zone circles (100m radius) with pulsing markers
+- **Smart Popup Interface**: Consolidated view of all active incidents with severity indicators
+
+### 3. **Intelligent Weight System**
+Each street intersection receives a 0-100 safety score based on:
+- **Crime Risk** (40%): Neighborhood crime statistics normalized by population
+- **POI Density** (20%): Nearby bars, nightlife, and high-activity venues
+- **Street Importance** (20%): Road type classification (highway vs residential)
+- **Intersection Complexity** (20%): Number of converging streets (traffic exposure)
+
+### 4. **Advanced Geospatial Analysis**
+- **Point-in-Polygon Spatial Joins**: Maps street intersections to neighborhood crime zones
+- **Coordinate System Accuracy**: WGS84 (EPSG:4326) with 6-decimal precision (~10cm accuracy)
+- **Spatial Indexing**: Optimized POI lookups within 100m radius
+- **Boundary Visualization**: 158 neighborhood polygons rendered as GeoJSON layers
+
+---
+
+## 🎬 Demo
+
+### Usage
+1. **Open SafeRoute AI**: Navigate to `http://localhost:3000`
+2. **View Crime Heat Map**: Streets colored by safety score (green = safe, red = dangerous)
+3. **Fetch Live Incidents**: Click "🤖 Fetch Live Crime Data" button
+4. **AI Processing**: Wait ~10 seconds while Gemini AI analyzes latest crime reports
+5. **View Results**: 
+   - Map auto-pans to show all active incidents
+   - Red markers with 100m danger zones appear
+   - Popup displays all incidents with detailed descriptions
+   - Click individual markers for specific incident details
+
+### What You'll See:
+- 🟢 **Safe Streets**: Low crime neighborhoods (e.g., Lambton Baby Point)
+- 🟡 **Moderate Risk**: Mixed safety zones
+- 🔴 **High Risk**: Entertainment districts, high-crime areas (e.g., Yonge-Bay Corridor)
+- 🚨 **Active Incidents**: Live crime events with severity ratings (60-95%)
+- 📍 **Precise Locations**: GPS coordinates, street intersections, and neighborhood names
+
+---
 
 ## 📊 How It Works
 
 ### 1. **Crime Risk Calculation**
-Uses **crime RATES** (already normalized by population) from Toronto Open Data:
+Uses **crime RATES** (normalized by population) from Toronto Open Data:
 
 ```python
 # Crime type weights (based on severity)
-HOMICIDE: 10.0    # Most severe
-SHOOTING: 10.0
-ROBBERY: 5.0
-ASSAULT: 3.0
-BREAK & ENTER: 2.0
-AUTO THEFT: 2.0
-THEFT FROM MV: 1.0
-THEFT OVER: 1.0
-BIKE THEFT: 1.0
+CRIME_WEIGHTS = {
+    'HOMICIDE': 10.0,    # Most severe
+    'SHOOTING': 10.0,
+    'ROBBERY': 5.0,
+    'ASSAULT': 3.0,
+    'BREAK_AND_ENTER': 2.0,
+    'AUTO_THEFT': 2.0,
+    'THEFT_FROM_MV': 1.0,
+    'THEFT_OVER': 1.0,
+    'BIKE_THEFT': 1.0
+}
 
 # Calculate neighborhood risk score
 risk_score = Σ(crime_rate × weight) for all crime types
@@ -44,7 +100,44 @@ risk_normalized = (risk - min) / (max - min)  # Normalize to 0-1
 - **Highest Risk**: West Humber-Clairville (normalized: 1.0)
 - **Lowest Risk**: Lambton Baby Point (normalized: 0.0)
 
-### 2. **Intersection (Node) Weight Calculation**
+### 2. **Live Incident Processing Pipeline** 🆕
+
+```
+1. Data Fetching
+   ↓
+   Scrape Toronto crime feeds (gtaupdate.com, police reports)
+   
+2. AI Analysis (Gemini 2.0 Flash)
+   ↓
+   Extract structured data:
+   - Location (street intersections, districts)
+   - Crime type (shooting, robbery, assault, etc.)
+   - Severity (1-100 scale)
+   - Detailed description (2-3 sentence summary)
+   
+3. Geocoding
+   ↓
+   Convert locations to GPS coordinates:
+   - Toronto Fire Service (TFS) district mapping
+   - Nominatim OpenStreetMap API
+   - Custom coordinate database
+   
+4. Visualization
+   ↓
+   Create map elements:
+   - Red circular markers (20px, white border, pulsing shadow)
+   - Danger zone circles (100m radius, 20% opacity)
+   - Detailed popups (location, description, severity table)
+   
+5. User Interface
+   ↓
+   Display consolidated popup:
+   - All incidents sorted by severity
+   - Color-coded borders (red > 80%, orange 70-80%, yellow < 70%)
+   - Timestamp and data source attribution
+```
+
+### 3. **Intersection (Node) Weight Calculation**
 
 Each of the **11,495 intersections** gets a weight based on **4 key features**:
 
@@ -487,61 +580,250 @@ Think of it like this:
      - How many bars/stores nearby? (More activity = more risk)
      - How busy is the intersection? (4-way vs 2-way)
      - What type of street? (Highway vs residential)
+
+5. **Live Crime Integration** 🚨
+   - Gemini AI analyzes real-time Toronto crime feeds
+   - Extracts location, type, severity from news-style reports
+   - Geocodes to precise GPS coordinates
+   - Creates 100m danger zones on map
+   - Consolidated popup shows all active incidents
    
-5. **Final Result: Every Street Has a Safety Score** 🎯
+6. **Final Result: Every Street Has a Safety Score** 🎯
    - Yonge & Dundas: Weight 84 (High Crime area + 73 bars nearby + busy 4-way) = 🔴 Red
    - Quiet Riverdale street: Weight 12 (Low Crime area + 0 bars + simple 2-way) = 🟢 Green
+   - Live incidents: Red markers with 100m radius danger circles
 
 ### **Why This Matters**
 
-- **Accurate**: Uses real Toronto crime statistics (2024 data)
+- **Accurate**: Uses real Toronto crime statistics (2024 data) + live incident monitoring
 - **Precise**: Down to individual street corners, not just neighborhoods
-- **Smart**: Considers multiple safety factors, not just crime
+- **Smart**: Considers multiple safety factors + AI-powered analysis
 - **Visual**: Color-coded map shows safe (green) vs dangerous (red) streets
-- **Actionable**: Powers safe route navigation - avoid red, prefer green
+- **Real-Time**: Fresh incidents with detailed descriptions and severity ratings
+- **Actionable**: Powers safe route navigation - avoid red zones, prefer green streets
 
 ### **The Technical Win**
 
-We bridged two incompatible datasets:
+We bridged three incompatible data sources:
 - **Crime data**: Area-level (neighborhoods)
 - **Street data**: Point-level (GPS coordinates)
+- **Live incidents**: Text descriptions → structured data
 
-Using proven geospatial algorithms, we accurately mapped area statistics to individual locations - enabling street-by-street safety analysis for the first time.
+Using proven geospatial algorithms and cutting-edge AI, we accurately mapped area statistics to individual locations and integrated real-time monitoring - enabling comprehensive street-by-street safety analysis.
 
 ---
 
-## 🗺️ Dependencies
+## 💻 Tech Stack
 
-### Runtime
-- **Node.js** v14+ (built-in `http`, `fs`, `path` modules)
+### **Frontend**
+- **JavaScript (ES6+)**: Core application logic and map interactions
+- **Leaflet.js v1.9.4**: Interactive map rendering and layer management
+- **HTML5/CSS3**: Responsive UI with dark theme styling
+- **Fetch API**: Asynchronous data loading
 
-### Frontend (CDN)
-- **Leaflet.js** v1.9.4 - Interactive maps
-  - https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
-  - https://unpkg.com/leaflet@1.9.4/dist/leaflet.js
+### **Backend**
+- **Node.js**: HTTP server for static files and API endpoints
+- **Python 3.x**: Data processing pipeline and AI integration
 
-### Map Tiles
-- **CartoDB Dark Matter** basemap
-  - https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
+### **AI & Data Processing**
+- **Google Gemini 2.0 Flash**: Natural language processing for crime incident extraction
+- **Beautiful Soup 4**: Web scraping for live crime feeds
+- **Pandas**: Data manipulation and statistical analysis
+- **NumPy**: Numerical computing for weight calculations
+- **Shapely**: Computational geometry and spatial operations
 
-### Python Libraries
+### **Geospatial**
+- **OpenStreetMap (OSM)**: Street network data (11,495 nodes, 13,195 edges)
+- **Nominatim API**: Geocoding and reverse geocoding
+- **GeoJSON**: Standard format for crime boundaries and routing graph
+- **WGS84 (EPSG:4326)**: Coordinate reference system
+
+### **Data Sources**
+- **Toronto Open Data**: 2024 crime statistics (158 neighborhoods, 9 crime types)
+- **Live Crime Feeds**: Real-time incident monitoring
+- **Toronto Fire Service (TFS)**: District coordinate mapping
+
+### **Map Visualization**
+- **CartoDB Dark Matter**: Basemap tiles for night-mode aesthetic
+- **Custom Markers**: SVG-based crime incident indicators
+- **Dynamic Layers**: Crime boundaries, routing edges, danger zones
+
+---
+
+## 🚀 Quick Start
+
+### **Prerequisites**
+- Node.js v14+ installed
+- Python 3.7+ installed
+- Internet connection (for map tiles and AI API)
+
+### **Installation**
+
 ```bash
-pandas      # Data manipulation
-numpy       # Numerical operations
-shapely     # Geospatial analysis
-scikit-learn # ML models (optional)
-lzma        # Decompress .xz files
+# 1. Clone repository
+git clone https://github.com/Solarcemir/Sheridan_Datathon.git
+cd Sheridan_Datathon
+
+# 2. Install Python dependencies
+pip install pandas numpy shapely scikit-learn beautifulsoup4 requests google-generativeai python-dotenv
+
+# 3. Set up environment variables (optional for AI features)
+# Create .env file with your Gemini API key:
+echo "GEMINI_API_KEY=your_api_key_here" > .env
+
+# 4. Start the server
+node server.js
 ```
 
-## 🚧 Next Steps
+### **Usage**
 
-- [ ] Implement A* pathfinding algorithm
-- [ ] Add start/end point selection UI
-- [ ] Calculate and display safest route
-- [ ] Compare safe route vs shortest route
-- [ ] Add route distance/time estimates
-- [ ] Train ML model for dynamic weight updates
-- [ ] Add real-time crime data integration
+```bash
+# Server starts on http://localhost:3000
+🚀 Server running at http://localhost:3000/
+📍 SafeRoute AI - Toronto Risk Map
+```
+
+**Open browser** → Navigate to `http://localhost:3000`
+
+### **Features to Try**
+
+1. **Explore Crime Heat Map**
+   - Pan/zoom around Toronto
+   - Streets colored green (safe) to red (dangerous)
+   - Neighborhood boundaries visible
+
+2. **Fetch Live Incidents**
+   - Click "🤖 Fetch Live Crime Data" button
+   - Wait ~10 seconds for AI processing
+   - View consolidated popup with all incidents
+   - Red danger zones appear on map
+
+3. **Inspect Individual Incidents**
+   - Click any red marker
+   - See detailed popup with location, description, severity
+
+---
+
+## 📊 Data Pipeline
+
+### **1. Historical Crime Processing** (Python)
+
+**Input Files:**
+- `Neighbourhood_Crime_Rates_Open_Data.csv` - Crime statistics
+- `Neighbourhood_Crime_Rates_Open_Data.geojson` - Neighborhood boundaries
+- Toronto OSM extract (street network XML)
+
+**Output Files:**
+- `routing_graph.json` - 11,495 nodes with safety weights (9.8 MB)
+- `routing_edges.geojson` - 13,195 edges for visualization (15 MB)
+
+### **2. Live Crime Monitoring** (Python + Node.js)
+
+```bash
+# Server endpoint: GET /fetch-live-crimes
+# Returns JSON with live incidents
+```
+
+**Pipeline:**
+1. Scrape Toronto crime feeds
+2. Gemini AI extracts structured data
+3. Geocode locations to GPS coordinates
+4. Return JSON to frontend
+5. Frontend creates markers and danger zones
+
+**Output Format:**
+```json
+{
+  "success": true,
+  "events": [
+    {
+      "lat": 43.6532,
+      "lon": -79.3832,
+      "type": "shooting",
+      "impact": 95,
+      "location": "King St W & Spadina Ave",
+      "description": "Detailed incident description..."
+    }
+  ],
+  "timestamp": "2024-11-23T12:34:56Z"
+}
+```
+
+---
+
+## 🗺️ Project Structure
+
+```
+Sheridan_Datathon/
+│
+├── index.html                 # Main web interface
+├── style.css                  # Dark theme styling
+├── app.js                     # Frontend logic (2100+ lines)
+├── server.js                  # Node.js HTTP server
+│
+├── routing_graph.json         # 11,495 nodes with safety weights (9.8 MB)
+├── routing_edges.geojson      # 13,195 edges for visualization (15 MB)
+├── Neighbourhood_Crime_Rates_*.csv     # Crime statistics
+├── Neighbourhood_Crime_Rates_*.geojson # Boundaries
+│
+├── fetch_live_crimes.py       # AI-powered live crime fetching
+├── gemini_api.py             # Gemini AI integration
+├── .env                       # API keys (not committed)
+│
+└── README.md                  # This file
+```
+
+---
+
+## 🎯 Future Roadmap
+
+### **Phase 1: Smart Routing** (Next Sprint)
+- [ ] Implement A* pathfinding with safety weights
+- [ ] Drag-and-drop start/end point selection
+- [ ] Display safest route vs shortest route comparison
+- [ ] Show route statistics (distance, time, safety score)
+- [ ] Turn-by-turn navigation with safety alerts
+
+### **Phase 2: Advanced AI** (Q1 2025)
+- [ ] Train ML models to predict crime hotspots by time of day
+- [ ] Dynamic weight adjustments based on real-time patterns
+- [ ] Sentiment analysis of crime descriptions
+- [ ] Integration with police dispatch data
+- [ ] Predictive risk modeling using historical trends
+
+### **Phase 3: Mobile App** (Q2 2025)
+- [ ] Native iOS/Android apps
+- [ ] GPS tracking with real-time rerouting
+- [ ] Push notifications for nearby incidents
+- [ ] Voice-guided safe navigation
+- [ ] Community reporting features
+- [ ] Offline mode with cached data
+
+### **Phase 4: Scale to Other Cities** (Q3 2025)
+- [ ] Template system for any city with open crime data
+- [ ] Automated data pipeline for municipal integration
+- [ ] Multi-city comparison and benchmarking
+- [ ] Public API for researchers and civic tech developers
+
+### **Phase 5: Social Impact** (Ongoing)
+- [ ] Partner with local police departments
+- [ ] Community safety workshops
+- [ ] Academic research collaborations
+- [ ] Open-source toolkit for developers
+
+---
+
+## 🏆 Achievements
+
+✅ Built complete end-to-end system in 48 hours  
+✅ Processed 158 neighborhoods, 11,495 intersections, 9 crime types  
+✅ Integrated cutting-edge AI (Gemini 2.0 Flash) for live monitoring  
+✅ Achieved 6-decimal GPS precision (~10cm accuracy)  
+✅ Created intuitive dark-themed UI optimized for night safety  
+✅ Generated production-ready weighted graph for pathfinding  
+✅ Implemented robust fallback systems for API reliability  
+
+---
 
 ## 📝 License
 
@@ -549,7 +831,8 @@ MIT License - Toronto Open Data is licensed under the Open Government Licence - 
 
 ## 🙏 Acknowledgments
 
-- **Toronto Open Data** - Crime statistics
+- **Toronto Open Data** - Crime statistics and neighborhood boundaries
 - **OpenStreetMap** contributors - Street network data
+- **Google Gemini AI** - Natural language processing
 - **CartoDB** - Dark Matter basemap tiles
 - **Leaflet.js** - Open-source mapping library

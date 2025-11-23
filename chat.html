@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeRoute AI - Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>SafeRoute AI Chat</h1>
+
+<div class="chat-input-section">
+    <label for="streetInput">Street Name:</label>
+    <input id="streetInput" placeholder="Enter street...">
+
+    <!-- Row for Time + Situation -->
+    <div class="row-inputs">
+        <div class="time-picker">
+            <label for="hour">Time:</label>
+            <select id="hour"></select> :
+            <select id="minute"></select>
+            <select id="ampm">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+            </select>
+        </div>
+
+        <div class="situation-picker">
+            <label for="situation">Situation:</label>
+            <select id="situation">
+                <option value="Driving">Driving</option>
+                <option value="Walking/Bus">Walking/Bus</option>
+                <option value="Housing">Housing</option>
+            </select>
+        </div>
+    </div>
+
+    <button onclick="askAI()">Ask AI</button>
+</div>
+
+<div id="ai-response" class="ai-response"></div>
+
+<script src="chat.js"></script>
+
+</body>
+</html>
