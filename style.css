@@ -126,6 +126,94 @@ body {
 }
 */
 
+/* Control Panel for Layer Toggles */
+.control-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #00ff88;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 255, 136, 0.2);
+    min-width: 200px;
+}
+
+.control-panel h3 {
+    color: #00ff88;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.layer-toggle {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+}
+
+.layer-toggle:hover {
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.layer-toggle input[type="checkbox"] {
+    margin-right: 10px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: #00ff88;
+}
+
+.layer-toggle span {
+    flex: 1;
+}
+
+.control-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.control-btn:hover {
+    background: rgba(0, 255, 136, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+    transform: translateY(-2px);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+}
+
+/* Bounds Info */
+.bounds-info {
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(0, 255, 136, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+.bounds-info small {
+    color: #00ff88;
+    line-height: 1.6;
+}
+
 /* DEMO: Control Panel for visualization toggles (commented out for future use)
 .control-panel {
     position: absolute;
@@ -365,5 +453,245 @@ body {
         transform: translateX(-50%);
         width: calc(100% - 40px);
         max-width: 400px;
+    }
+}
+
+/* Routing Mode Button */
+#routing-toggle-btn,
+#show-network-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: none;
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+    margin-bottom: 5px;
+}
+
+#show-network-btn {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+}
+
+#routing-toggle-btn:hover,
+#show-network-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+}
+
+#show-network-btn:hover {
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.5);
+}
+
+#routing-toggle-btn.active {
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.3);
+}
+
+#show-network-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Route Result Panel */
+.route-result-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.95);
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid #00ff88;
+    z-index: 1000;
+    max-width: 600px;
+    width: calc(100% - 40px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 255, 136, 0.4);
+}
+
+/* Route Comparison Panel */
+.route-comparison-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.95);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #00ff88;
+    z-index: 1000;
+    max-width: 900px;
+    width: calc(100% - 40px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
+}
+
+.route-comparison-panel h3 {
+    color: #00ff88;
+    margin-bottom: 15px;
+    font-size: 18px;
+    text-align: center;
+}
+
+.routes-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.route-option {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.route-option:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.route-option.safest {
+    border-color: #00ff88;
+}
+
+.route-option.balanced {
+    border-color: #ffa500;
+}
+
+.route-option.shortest {
+    border-color: #ff4444;
+}
+
+.route-option h4 {
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.route-option.safest h4 {
+    color: #00ff88;
+}
+
+.route-option.balanced h4 {
+    color: #ffa500;
+}
+
+.route-option.shortest h4 {
+    color: #ff4444;
+}
+
+.route-stat {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.route-stat span:first-child {
+    color: #888;
+}
+
+.route-stat span:last-child {
+    color: #fff;
+    font-weight: bold;
+}
+
+.danger-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.danger-low {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.danger-moderate {
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+}
+
+.danger-high {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+}
+
+.reset-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #00ff88;
+}
+
+/* Vehicle marker animation */
+.vehicle-marker {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Risk popup styling */
+.risk-popup .leaflet-popup-content-wrapper {
+    background: rgba(0, 0, 0, 0.95);
+    color: #fff;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    padding: 0;
+}
+
+.risk-popup .leaflet-popup-content {
+    margin: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.risk-popup .leaflet-popup-tip {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #667eea;
+    border-top: none;
+    border-right: none;
+}
+
+@media (max-width: 768px) {
+    .routes-container {
+        flex-direction: column;
+    }
+    
+    .route-comparison-panel {
+        bottom: 10px;
+        max-width: calc(100% - 20px);
     }
 }
